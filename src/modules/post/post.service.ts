@@ -13,41 +13,57 @@ const createPost = async (data: Post): Promise<Post> => {
   return result;
 };
 
-const getAllPosts = async (options: any): Promise<Post[]> => {
-  const { sortBy, sortOrder, searchTerm } = options;
-  const result = await prisma.post.findMany({
-    include: {
-      author: true,
-      category: true,
-    },
-    orderBy:
-      sortBy && sortOrder
-        ? {
-            [sortBy]: sortOrder,
-          }
-        : {
-            createdAt: "desc",
-          },
-    where: {
-      OR: [
-        {
-          title: {
-            contains: searchTerm,
-            mode: "insensitive",
-          },
-        },
-        {
-          author: {
-            name: {
+const getAllPosts = async (options: any) => {
+  let { sortBy, sortOrder, searchTerm, limit, page } = options;
+
+  limit = parseInt(limit);
+  page = parseInt(page);
+  const skip = (page - 1) * limit || 0;
+  const take = limit || 10;
+
+  return await prisma.$transaction(async (prismaTransaction) => {
+    const result = await prismaTransaction.post.findMany({
+      skip,
+      take,
+      include: {
+        author: true,
+        category: true,
+      },
+      orderBy:
+        sortBy && sortOrder
+          ? {
+              [sortBy]: sortOrder,
+            }
+          : {
+              createdAt: "desc",
+            },
+      where: {
+        OR: [
+          {
+            title: {
               contains: searchTerm,
               mode: "insensitive",
             },
           },
-        },
-      ],
-    },
+          {
+            author: {
+              name: {
+                contains: searchTerm,
+                mode: "insensitive",
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    const total = await prismaTransaction.post.count();
+
+    return {
+      data: result,
+      total,
+    };
   });
-  return result;
 };
 
 const getSinglePost = async (id: number): Promise<Post | null> => {
@@ -61,8 +77,28 @@ const getSinglePost = async (id: number): Promise<Post | null> => {
   return result;
 };
 
+const updatePost = async (
+  id: number,
+  payload: Partial<Post>
+): Promise<Post> => {
+  const result = await prisma.post.update({
+    where: { id },
+    data: payload,
+  });
+  return result;
+};
+
+const deletePost = async (id: number): Promise<Post> => {
+  const result = await prisma.post.delete({
+    where: { id },
+  });
+  return result;
+};
+
 export const PostService = {
   createPost,
   getAllPosts,
   getSinglePost,
+  updatePost,
+  deletePost,
 };

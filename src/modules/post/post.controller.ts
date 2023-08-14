@@ -23,7 +23,8 @@ const getAllPosts = async (req: Request, res: Response) => {
       statusCode: 400,
       success: true,
       message: "Posts Served Successfully!",
-      data: result,
+      total: result.total,
+      data: result.data,
     });
   } catch (error) {
     res.send(error);
@@ -45,8 +46,41 @@ const getSinglePost = async (req: Request, res: Response) => {
   }
 };
 
+const updatePost = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const payload = req.body;
+    const result = await PostService.updatePost(id, payload);
+    res.send({
+      statusCode: 400,
+      success: true,
+      message: "Post Updated Successfully!",
+      data: result,
+    });
+  } catch (error) {
+    res.send(error);
+  }
+};
+
+const deletePost = async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const result = await PostService.deletePost(id);
+    res.send({
+      statusCode: 400,
+      success: true,
+      message: "Post Deleted Successfully!",
+      data: result,
+    });
+  } catch (error) {
+    res.send(error);
+  }
+};
+
 export const PostController = {
   createPost,
   getAllPosts,
   getSinglePost,
+  updatePost,
+  deletePost,
 };
